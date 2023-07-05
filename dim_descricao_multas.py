@@ -16,21 +16,24 @@ collection_multas = db['multas']
 descricao_multa = collection_multas.distinct('descricao_infracao')
 
 # Criar DataFrame da tabela de dimensão "dim_multa"
-df_dim_multa = pd.DataFrame({'descricao_multa': descricao_multa})
+dim_desc_multa = pd.DataFrame({'descricao_multa': descricao_multa})
 
 # Criar DataFrame da tabela de dimensão "dim_multa" com ID
-df_dim_multa = pd.DataFrame({'id_descricao_multa': range(1, len(descricao_multa) + 1),
+dim_desc_multa = pd.DataFrame({'id_descricao_multa': range(1, len(descricao_multa) + 1),
                              'descricao_multa': descricao_multa})
 
 
 # Exibir o DataFrame da tabela de dimensão
-print(df_dim_multa)
+print(dim_desc_multa)
+
+# Salvar o DataFrame em um arquivo CSV
+dim_desc_multa.to_csv('dim_descricao_multas.csv', index=False)
 
 # Salvar o DataFrame como um arquivo CSV em um bucket do Google Cloud Storage
 bucket_name = 'bucket_case-builders'
-file_name = 'dim_tipos_multas.csv'
+file_name = 'dim_descricao_multas.csv'
 project_id = '664810481607'
-credentials_path = 'C:/Users/BeatrizAndrade/builderscase/case-builders-1ff59ff8f179.json'
+credentials_path = 'C:/Users/BeatrizAndrade/case-builders-1ff59ff8f179.json'
 
 def save_dataframe_to_gcs(dataframe, bucket_name, file_name, project_id, credentials_path):
     # Carrega as credenciais
@@ -46,6 +49,6 @@ def save_dataframe_to_gcs(dataframe, bucket_name, file_name, project_id, credent
     blob = bucket.blob(file_name)
     blob.upload_from_string(dataframe.to_csv(index=False), content_type='text/csv')
 
-save_dataframe_to_gcs(df_dim_multa, bucket_name, file_name, project_id, credentials_path)
+save_dataframe_to_gcs(dim_desc_multa, bucket_name, file_name, project_id, credentials_path)
 
 print(f"O DataFrame foi salvo como {file_name} no Google Cloud Storage.")

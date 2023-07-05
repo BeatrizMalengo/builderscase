@@ -1,4 +1,3 @@
-import pymongo
 from pymongo import MongoClient
 import pandas as pd
 from google.cloud import storage
@@ -48,23 +47,17 @@ mapa_meses = {
     'DEZEMBRO': 12
 }
 
-mapa_descricao_multas = {
-  'Art. 209 Deixar de adentrar as áreas destinadas à pesagem de veículos': 1,
-  'Realizar transporte permissionado de passageiros, sem a emissão de bilhete.': 2,
-  'Transitar com o veículo com excesso de peso - PBT/PBTC':3,
-  'Transitar com o veículo com excesso de peso - PBT/PBTC e Por Eixo':4,
-  'Transitar com o veículo com excesso de peso - Por Eixo':5,
-  'Transitar com o veículo excedendo a CMT acima de 1000 kg':6,
-  'Transitar com o veículo excedendo a CMT em até 600 kg':7,
-  'Transitar com o veículo excedendo a CMT entre 601 e 1000 kg':8
-}
+# Criar um dicionário de mapeamento entre descricoes de multas IDs
+dim_descricao_multas = pd.read_csv('dim_descricao_multas.csv')
+id_descricao_multa = dict(zip(dim_descricao_multas['descricao_multa'], dim_descricao_multas['id_descricao_multa']))
 
-mapa_escopo_multas = {
-                        
-  'CMT - Capacidade Máxima de Tração': 1,
-  'Evasão de Balança': 2,
-  'Excesso de Peso':3
-}
+# Criar um dicionário de mapeamento entre escopos de multas IDs
+dim_escopo_multas = pd.read_csv('dim_escopo_multas.csv')
+id_escopo_multa = dict(zip(dim_escopo_multas['escopo_multa'], dim_escopo_multas['id_escopo_multa']))
+
+# Criar um dicionário de mapeamento entre nomes de estados e IDs de estados
+dim_estados_cidades = pd.read_csv('dim_estados_cidades.csv')
+estado_id_map = dict(zip(dim_estados_cidades['uf'], dim_estados_cidades['id_estado']))
 
 # Padronização dos valores da coluna 'mes' para maiúsculas e remoção de espaços extras
 df_multas_transito['mes'] = df_multas_transito['mes'].astype(str).str.upper().str.strip()
@@ -84,17 +77,55 @@ df_multas_agregado = df_multas_transito.groupby(['mes', 'ano']).agg({'quantidade
 # Renomear a coluna de quantidade de multas para o nome desejado na tabela fato
 df_multas_agregado = df_multas_agregado.rename(columns={'quantidade_autos': 'quantidade_multas_emitidas'})
 
-# Cria a coluna 'mes_ano' combinando as colunas 'mes' e 'ano'
-df_multas_agregado['mes_ano'] = df_multas_agregado['mes'].astype(str) + df_multas_agregado['ano'].astype(str)
+# ID
+df_multas_agregado.reset_index(drop=True, inplace=True)
+df_multas_agregado['id'] = df_multas_agregado.index + 1
 
+# Substituir UF, escopo e descrição pelos IDs
+df_multas_agregado['id_descricao_multa'] = df_multas_transito ['descricao_infracao'].map(id_descricao_multa)  #substituindo a descricao da infraçao pelo ID
+df_multas_agregado['id_escopo_multa'] = df_multas_transito ['escopo_autuacao'].map(id_escopo_multa) #substituindo o escopo da infraçao pelo ID
+df_multas_agregado['id_estado'] = df_multas_transito ['uf'].map(estado_id_map)
+
+
+# Ranking de multas por UF
+df_multas_estado = df_multas_agregado.groupby('id_estado')['quantidade_multas_emitidas'].sum().reset_index() # Calcular a quantidade total de multas por estado
+df_multas_estado['ranking_estado'] = df_multas_estado['quantidade_multas_emitidas'].rank(ascending=False, method='min') # Calcular o ranking com base na quantidade de multas por estado
+df_multas_agregado = df_multas_agregado.merge(df_multas_estado[['id_estado', 'ranking_estado']], on='id_estado') # Mesclar o ranking por estado de volta ao DataFrame principal
+
+# Ranking de multas por Descrição de multa
+df_descricao_multas = df_multas_agregado.groupby('id_descricao_multa')['quantidade_multas_emitidas'].sum().reset_index() # Calcular a quantidade total de multas por descricao
+df_descricao_multas['ranking_descricao_multa'] = df_descricao_multas['quantidade_multas_emitidas'].rank(ascending=False, method='min') # Calcular o ranking com base na quantidade de multas por descricao
+df_multas_agregado = df_multas_agregado.merge(df_descricao_multas[['id_descricao_multa', 'ranking_descricao_multa']], on='id_descricao_multa') # Mesclar o ranking por descricao de volta ao DataFrame principal
+
+# Ranking de multas por escopo de multa
+df_escopo_multas = df_multas_agregado.groupby('id_escopo_multa')['quantidade_multas_emitidas'].sum().reset_index() # Calcular a quantidade total de multas por escopo
+df_escopo_multas['ranking_escopo_multa'] = df_escopo_multas['quantidade_multas_emitidas'].rank(ascending=False, method='min') # Calcular o ranking com base na quantidade de multas por escopo
+df_multas_agregado = df_multas_agregado.merge(df_escopo_multas[['id_escopo_multa', 'ranking_escopo_multa']], on='id_escopo_multa') # Mesclar o ranking por escopo de volta ao DataFrame principal
+
+# Ranking de multas de id de estado por descricao
+df_descricao_estado = df_multas_agregado.groupby(['id_estado', 'id_descricao_multa'])['quantidade_multas_emitidas'].sum().reset_index()  # Calcular a quantidade total de multas por combinação de id de estado e id de descricao
+df_descricao_estado['ranking_descricao_estado'] = df_descricao_estado.groupby('id_descricao_multa')['quantidade_multas_emitidas'].rank(ascending=False, method='min')  # Calcular o ranking com base na quantidade total de multas por combinação de id de estado e id de descricao
+df_multas_agregado = df_multas_agregado.merge(df_descricao_estado[['id_estado', 'id_descricao_multa', 'ranking_descricao_estado']], on=['id_estado', 'id_descricao_multa'])  # Mesclar o ranking por estado e descricao de volta ao DataFrame principal
+
+print (df_descricao_estado)
+
+
+# Comparativo com mês anterior
 df_multas_agregado = df_multas_agregado.sort_values(['ano','mes']) # Ordenar o DataFrame final pelas colunas "mes e "ano"
+df_multas_agregado['mes_ano'] = df_multas_agregado['mes'].astype(str) + df_multas_agregado['ano'].astype(str)
 df_multas_agregado ['comparativa_periodo_anterior'] = df_multas_agregado ['quantidade_multas_emitidas'] - df_multas_agregado ['quantidade_multas_emitidas'].shift(1) # Calcula a diferença de multas emitidas entre o mês atual e o mês anterior
 df_multas_agregado ['comparativa_periodo_anterior'].fillna(df_multas_agregado ['quantidade_multas_emitidas'], inplace=True) # Substitui o valor nulo na primeira linha pelo valor do mês atual
-df_multas_agregado['id_descricao_multa'] = df_multas_transito['descricao_infracao'].map(mapa_descricao_multas) #substituindo a descricao da infraçao pelo ID
-df_multas_agregado['id_escopo_multa'] = df_multas_transito['escopo_autuacao'].map(mapa_escopo_multas) #substituindo o escopo da infraçao pelo ID
+df_multas_agregado = df_multas_agregado.drop(['mes', 'ano'], axis=1)
 
-# Exibe o resultado
-#print(df)
+
+
+# Reorganizar as colunas do DataFrame
+colunas_ordenadas = ['id', 'mes_ano', 'id_estado', 'id_descricao_multa', 'id_escopo_multa',
+                     'quantidade_multas_emitidas', 'comparativa_periodo_anterior', 'ranking_estado','ranking_descricao_multa',
+                     'ranking_escopo_multa','ranking_descricao_estado']
+
+df_multas_agregado = df_multas_agregado.reindex(columns=colunas_ordenadas)
+
 
 print(df_multas_agregado)
 
@@ -102,7 +133,7 @@ print(df_multas_agregado)
 bucket_name = 'bucket_case-builders'
 file_name = 'fato_multas_transito.csv'
 project_id = '664810481607'
-credentials_path = 'C:/Users/BeatrizAndrade/builderscase/case-builders-1ff59ff8f179.json'
+credentials_path = 'C:/Users/BeatrizAndrade/case-builders-1ff59ff8f179.json'
 
 def save_dataframe_to_gcs(dataframe, bucket_name, file_name, project_id, credentials_path):
     # Carrega as credenciais

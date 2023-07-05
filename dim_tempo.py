@@ -42,7 +42,7 @@ df_dim_tempo['semestre'] = (df_dim_tempo['mes'] - 1) // 6 + 1
 print(df_dim_tempo)
 
 # Define o caminho do arquivo JSON de credenciais
-credentials_path = 'C:/Users/BeatrizAndrade/builderscase/case-builders-1ff59ff8f179.json'
+credentials_path = 'C:/Users/BeatrizAndrade/case-builders-1ff59ff8f179.json'
 
 # Criar o cliente do Cloud Storage
 storage_client = storage.Client.from_service_account_json(credentials_path)
