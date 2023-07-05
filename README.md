@@ -30,10 +30,10 @@ O dashboard pode ser acessado através do seguinte link: [Link do Dashboard](ins
 
 ## 💻 Projeto no Google Cloud Platform
 
-O projeto no Google Cloud Platform contém os dados processados e outros recursos relevantes para o desenvolvimento do dashboard. Para acessar o projeto no GCP, utilize o seguinte link: [Link do Projeto no GCP](inserir-link-aqui)
+O projeto no Google Cloud Platform contém os dados processados e outros recursos relevantes para o desenvolvimento do dashboard. Para acessar o projeto no GCP, utilize o seguinte link: [Link do Projeto no GCP](https://console.cloud.google.com/storage/browser/bucket_case-builders;tab=objects?forceOnBucketsSortingFiltering=true&hl=pt-br&project=case-builders&prefix=&forceOnObjectsSortingFiltering=false)
 
 ## 📦 Entregáveis
 
-- Link para o repositório do GitHub: [nome-do-repositorio](https://github.com/seu-usuario/nome-do-repositorio)
+- Link para o repositório do GitHub: [builderscase](https://github.com/BeatrizMalengo/builderscase)
 
 Se você tiver alguma dúvida adicional, sinta-se à vontade para perguntar. Entre em contato com Beatriz Malengo Andrade pelo e-mail <biamalengo@gmail.com>. Estamos aqui para ajudar!
