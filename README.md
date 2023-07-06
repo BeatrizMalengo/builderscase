@@ -26,7 +26,7 @@ Os dados foram extraídos dos bancos de dados originais e processados utilizando
 
 ## 🚀 Como Acessar o Dashboard
 
-O dashboard pode ser acessado através do seguinte link: [Link do Dashboard](inserir-link-aqui)
+O dashboard pode ser acessado através do seguinte link: [Link do Dashboard](https://lookerstudio.google.com/s/qctBMdUjvCw)
 
 ## 💻 Projeto no Google Cloud Platform
 

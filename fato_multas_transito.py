@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 import pandas as pd
+from datetime import datetime
 from google.cloud import storage
 from google.oauth2 import service_account
 
@@ -102,27 +103,50 @@ df_escopo_multas = df_multas_agregado.groupby('id_escopo_multa')['quantidade_mul
 df_escopo_multas['ranking_escopo_multa'] = df_escopo_multas['quantidade_multas_emitidas'].rank(ascending=False, method='min') # Calcular o ranking com base na quantidade de multas por escopo
 df_multas_agregado = df_multas_agregado.merge(df_escopo_multas[['id_escopo_multa', 'ranking_escopo_multa']], on='id_escopo_multa') # Mesclar o ranking por escopo de volta ao DataFrame principal
 
-# Ranking de multas de id de estado por descricao
-df_descricao_estado = df_multas_agregado.groupby(['id_estado', 'id_descricao_multa'])['quantidade_multas_emitidas'].sum().reset_index()  # Calcular a quantidade total de multas por combinação de id de estado e id de descricao
-df_descricao_estado['ranking_descricao_estado'] = df_descricao_estado.groupby('id_descricao_multa')['quantidade_multas_emitidas'].rank(ascending=False, method='min')  # Calcular o ranking com base na quantidade total de multas por combinação de id de estado e id de descricao
-df_multas_agregado = df_multas_agregado.merge(df_descricao_estado[['id_estado', 'id_descricao_multa', 'ranking_descricao_estado']], on=['id_estado', 'id_descricao_multa'])  # Mesclar o ranking por estado e descricao de volta ao DataFrame principal
+# Ranking de multas de UF por descricao 
+df_descricao_estado = df_multas_agregado.groupby('id_estado')['id_descricao_multa'].count().reset_index() # Calcular a quantidade total de multas por estado
+df_descricao_estado['ranking_descricao_estado'] = df_descricao_estado['id_descricao_multa'].rank(ascending=False, method='min') # Calcular o ranking com base na quantidade de multas por estado
+df_multas_agregado = df_multas_agregado.merge(df_descricao_estado[['id_estado', 'ranking_descricao_estado']], on='id_estado') # Mesclar o ranking por estado de volta ao DataFrame principal
 
 print (df_descricao_estado)
 
 
 # Comparativo com mês anterior
 df_multas_agregado = df_multas_agregado.sort_values(['ano','mes']) # Ordenar o DataFrame final pelas colunas "mes e "ano"
-df_multas_agregado['mes_ano'] = df_multas_agregado['mes'].astype(str) + df_multas_agregado['ano'].astype(str)
+df_multas_agregado['ano_mes'] = df_multas_agregado['mes'].astype(str) + df_multas_agregado['ano'].astype(str)
 df_multas_agregado ['comparativa_periodo_anterior'] = df_multas_agregado ['quantidade_multas_emitidas'] - df_multas_agregado ['quantidade_multas_emitidas'].shift(1) # Calcula a diferença de multas emitidas entre o mês atual e o mês anterior
 df_multas_agregado ['comparativa_periodo_anterior'].fillna(df_multas_agregado ['quantidade_multas_emitidas'], inplace=True) # Substitui o valor nulo na primeira linha pelo valor do mês atual
 df_multas_agregado = df_multas_agregado.drop(['mes', 'ano'], axis=1)
 
 
+def obter_nome_mes(data):
+    meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+    return meses[data.month - 1]
+
+def ajustar_formato_ano_mes(ano_mes):
+    mes = int(ano_mes[:-4])
+    ano = int(ano_mes[-4:])
+    nome_mes = obter_nome_mes(datetime(ano, mes, 1))
+    return nome_mes + ' de ' + str(ano)
+
+df_multas_agregado['ano_mes'] = df_multas_agregado['ano_mes'].apply(ajustar_formato_ano_mes)
+
+df_dim_tempo = pd.read_csv('dim_tempo.csv')
+
+id_ano_mes = dict(zip(df_dim_tempo['ano_mes'], df_dim_tempo['id_ano_mes']))
+df_multas_agregado['id_ano_mes'] = df_multas_agregado['ano_mes'].map(id_ano_mes)
+
+
+# df_grupo_descricao_multa = df_multas_agregado.groupby('id_descricao_multa')
+# estado_mais_multas_por_descricao = df_grupo_descricao_multa['quantidade_multas_emitidas'].idxmax()
+# # Mapear o índice para o estado correspondente
+# estado_mais_multas_por_descricao = df_multas_agregado.loc[estado_mais_multas_por_descricao, ['id_estado', 'id_descricao_multa']]
+
+
 
 # Reorganizar as colunas do DataFrame
-colunas_ordenadas = ['id', 'mes_ano', 'id_estado', 'id_descricao_multa', 'id_escopo_multa',
-                     'quantidade_multas_emitidas', 'comparativa_periodo_anterior', 'ranking_estado','ranking_descricao_multa',
-                     'ranking_escopo_multa','ranking_descricao_estado']
+colunas_ordenadas = ['id','id_ano_mes', 'id_estado', 'id_descricao_multa', 'id_escopo_multa',
+                     'quantidade_multas_emitidas', 'comparativa_periodo_anterior', 'ranking_estado','ranking_descricao_multa','ranking_escopo_multa','ranking_descricao_estado']
 
 df_multas_agregado = df_multas_agregado.reindex(columns=colunas_ordenadas)
 

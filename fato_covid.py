@@ -32,6 +32,11 @@ results_utf8 = [[item.decode('utf-8') if isinstance(item, bytes) else item for i
 # Criar DataFrame
 df_covid = pd.DataFrame(results_utf8, columns=columns)
 
+# Comparativo com dia anterior
+df_covid = df_covid.sort_values('date') # Ordenar o DataFrame final pela coluna "date"
+df_covid ['comparativa_periodo_anterior'] = df_covid ['new_deaths'] - df_covid ['new_deaths'].shift(1) # Calcula a diferença de mortes entre o dia atual e o dia anterior
+df_covid ['comparativa_periodo_anterior'].fillna(df_covid ['new_deaths'], inplace=True) # Substitui o valor nulo na primeira linha pelo valor do mês atual
+
 # Criar um dicionário de mapeamento entre nomes de estados e IDs de estados
 dim_estados_cidades = pd.read_csv('dim_estados_cidades.csv')
 estado_id_map = dict(zip(dim_estados_cidades['uf'], dim_estados_cidades['id_estado']))
@@ -64,7 +69,7 @@ df_agg_estado['ranking_estado'] = df_agg_estado['mortes'].rank(ascending=False, 
 df_covid_final = df_covid_final.merge(df_agg_cidade[['id_cidade', 'ranking_cidade']], on='id_cidade')
 df_covid_final = df_covid_final.merge(df_agg_estado[['id_estado', 'ranking_estado']], on='id_estado')
 
-colunas_ordenadas = ['id','data','id_cidade','id_estado','confirmados','mortes', 'ranking_cidade','ranking_estado']
+colunas_ordenadas = ['id','data','id_cidade','id_estado','confirmados','mortes','comparativa_periodo_anterior','ranking_cidade','ranking_estado']
 df_covid_final= df_covid_final.reindex(columns=colunas_ordenadas) # Reorganizar as colunas do DataFrame
 
 

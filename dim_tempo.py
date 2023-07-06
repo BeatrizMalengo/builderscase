@@ -1,15 +1,24 @@
 from google.cloud import storage
 import pandas as pd
+from datetime import datetime
 
-# Função para mapear os nomes dos dias da semana em português, porque parece que a configuração do locale "pt_BR.UTF-8" não é suportada no ambiente atual do Colab >:(
+# Função para mapear os nomes dos dias da semana em português
 def obter_nome_dia_semana(data):
     dias_semana = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo']
     return dias_semana[data.weekday()]
 
-# Função para mapear os nomes dos meses em português, porque parece que a configuração do locale "pt_BR.UTF-8" não é suportada no ambiente atual do Colab >:(
+# Função para mapear os nomes dos meses em português
 def obter_nome_mes(data):
     meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
     return meses[data.month - 1]
+
+# Função para definir o trimestre com base no número do mês
+def definir_trimestre(mes):
+    trimestres = {1: '1º trimestre', 2: '1º trimestre', 3: '1º trimestre',
+                  4: '2º trimestre', 5: '2º trimestre', 6: '2º trimestre',
+                  7: '3º trimestre', 8: '3º trimestre', 9: '3º trimestre',
+                  10: '4º trimestre', 11: '4º trimestre', 12: '4º trimestre'}
+    return trimestres[mes]
 
 # Criação do DataFrame da dimensão de tempo
 start_date = '01/01/2020'
@@ -27,17 +36,26 @@ periodos = pd.date_range(start=pd.to_datetime(start_date, format=date_format),
 df_dim_tempo = pd.DataFrame({'data': periodos})
 
 # Adiciona as informações de período ao DataFrame
-df_dim_tempo['id_tempo'] = df_dim_tempo.reset_index().index + 1 # coluna 'id_tempo' com base no índice sequencial
-df_dim_tempo['data'] = periodos
+df_dim_tempo['id_tempo'] = df_dim_tempo.reset_index().index + 1
 df_dim_tempo['ano'] = df_dim_tempo['data'].dt.year
 df_dim_tempo['mes'] = df_dim_tempo['data'].dt.month
 df_dim_tempo['nome_mes'] = df_dim_tempo['data'].apply(obter_nome_mes)
-df_dim_tempo['semana_ano'] = df_dim_tempo['data'].dt.isocalendar().week  # Adiciona a coluna de semana do ano usando o método isocalendar().week
+# Cria a coluna "trimestre" com base no número do mês
+df_dim_tempo['trimestre'] = df_dim_tempo['mes'].apply(definir_trimestre)
+df_dim_tempo['ano_mes'] = df_dim_tempo['nome_mes'] + ' de ' + df_dim_tempo['data'].dt.strftime('%Y')
+df_dim_tempo['semana_ano'] = df_dim_tempo['data'].dt.isocalendar().week
+df_dim_tempo['ano_semana_iso'] = df_dim_tempo['data'].dt.strftime('%d de ') + df_dim_tempo['nome_mes'] + ' de ' + df_dim_tempo['data'].dt.strftime('%Y') + ' a ' + df_dim_tempo['data'].dt.strftime('%d de ') + df_dim_tempo['nome_mes'] + ' de ' + df_dim_tempo['data'].dt.strftime('%Y') + ' (semana ' + df_dim_tempo['semana_ano'].astype(str) + ')'
+#df_dim_tempo['data_hora'] = df_dim_tempo['data'].dt.strftime('%d de %B de %Y, %H:%M:%S')
+df_dim_tempo['trimestre'] = df_dim_tempo['trimestre'].astype(str)
+#df_dim_tempo['mes'] = df_dim_tempo['data'].dt.strftime('%B')
+df_dim_tempo['semana_iso'] = 'Semana ' + df_dim_tempo['semana_ano'].astype(str)
+df_dim_tempo['mes_dia'] = df_dim_tempo['data'].dt.strftime('%d de ') + df_dim_tempo['nome_mes']
+df_dim_tempo['dia_semana'] = df_dim_tempo['data'].apply
 df_dim_tempo['dia_semana'] = df_dim_tempo['data'].apply(obter_nome_dia_semana)
-df_dim_tempo['trimestre'] = df_dim_tempo['data'].dt.quarter
-df_dim_tempo['semestre'] = (df_dim_tempo['mes'] - 1) // 6 + 1
+df_dim_tempo['dia_do_mes'] = df_dim_tempo['data'].dt.day
+df_dim_tempo['id_ano_mes'] = pd.factorize(df_dim_tempo['ano_mes'])[0] + 1
 
-#df_dim_tempo = ['id_tempo','data','ano','mes','nome_mes','semana_ano','dia_semana','trimestre','semestre']
+df_dim_tempo.to_csv('dim_tempo.csv', index=False)
 
 print(df_dim_tempo)
 
