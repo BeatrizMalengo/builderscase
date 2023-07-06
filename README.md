@@ -36,4 +36,4 @@ O projeto no Google Cloud Platform contém os dados processados e outros recurso
 
 - Link para o repositório do GitHub: [builderscase](https://github.com/BeatrizMalengo/builderscase)
 
-Se você tiver alguma dúvida adicional, sinta-se à vontade para perguntar. Entre em contato com Beatriz Malengo Andrade pelo e-mail <biamalengo@gmail.com>. Estamos aqui para ajudar!
+Se você tiver alguma dúvida adicional, sinta-se à vontade para perguntar. Entre em contato com Beatriz Malengo Andrade pelo e-mail <biamalengo@gmail.com>. Estou aqui para ajudar!
