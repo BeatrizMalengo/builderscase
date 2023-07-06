@@ -30,7 +30,7 @@ O dashboard pode ser acessado através do seguinte link: [Link do Dashboard](htt
 
 ## 💻 Projeto no Google Cloud Platform
 
-O projeto no Google Cloud Platform contém os dados processados e outros recursos relevantes para o desenvolvimento do dashboard. Para acessar o projeto no GCP, utilize o seguinte link: [Link do Projeto no GCP](https://console.cloud.google.com/storage/browser/bucket_case-builders;tab=objects?forceOnBucketsSortingFiltering=true&hl=pt-br&project=case-builders&prefix=&forceOnObjectsSortingFiltering=false)
+O projeto no Google Cloud Platform contém os dados processados e outros recursos relevantes para o desenvolvimento do dashboard. Para acessar o projeto no GCP, utilize o seguinte link: [Link do Bucket no GCP](https://console.cloud.google.com/storage/browser/bucket_case-builders;tab=objects?forceOnBucketsSortingFiltering=true&hl=pt-br&project=case-builders&prefix=&forceOnObjectsSortingFiltering=false)
 
 ## 📦 Entregáveis
 
