@@ -72,7 +72,7 @@ df_covid_final = df_covid_final.merge(df_agg_estado[['id_estado', 'ranking_estad
 colunas_ordenadas = ['id','data','id_cidade','id_estado','confirmados','mortes','comparativa_periodo_anterior','ranking_cidade','ranking_estado']
 df_covid_final= df_covid_final.reindex(columns=colunas_ordenadas) # Reorganizar as colunas do DataFrame
 
-
+df_covid_final.to_csv('fato_covid.csv', index=False)
 
 print(df_covid_final) # Exibir DataFrame
 

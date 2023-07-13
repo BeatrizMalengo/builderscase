@@ -53,7 +53,7 @@ df_dim_tempo['mes_dia'] = df_dim_tempo['data'].dt.strftime('%d de ') + df_dim_te
 df_dim_tempo['dia_semana'] = df_dim_tempo['data'].apply
 df_dim_tempo['dia_semana'] = df_dim_tempo['data'].apply(obter_nome_dia_semana)
 df_dim_tempo['dia_do_mes'] = df_dim_tempo['data'].dt.day
-df_dim_tempo['id_ano_mes'] = pd.factorize(df_dim_tempo['ano_mes'])[0] + 1
+df_dim_tempo['id_ano_mes'] = df_dim_tempo['ano'].astype(str) + df_dim_tempo['mes'].astype(str)
 
 df_dim_tempo.to_csv('dim_tempo.csv', index=False)
 
